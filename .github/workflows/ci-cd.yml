@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
-      - run: pnpm --allow-build=@parcel/watcher --allow-build=@prisma/engines --allow-build=@swc/core --allow-build=cypress --allow-build=esbuild --allow-build=prisma --allow-build=sharp install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
 
