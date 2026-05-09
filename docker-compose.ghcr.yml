@@ -1,6 +1,6 @@
 services:
   umami:
-    image: ${UMAMI_IMAGE:-ghcr.io/arthurlovelin/umami:latest}
+    image: ghcr.io/umami-software/umami:latest
     container_name: umami
     restart: unless-stopped
     init: true
