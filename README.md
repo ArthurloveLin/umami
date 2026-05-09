@@ -116,8 +116,10 @@ docker compose -f docker-compose.ghcr.yml up -d
 4. Verify health:
 
 ```bash
-curl http://127.0.0.1:3000/api/heartbeat
+curl http://127.0.0.1:3001/api/heartbeat
 ```
+
+`docker-compose.ghcr.yml` binds the container's internal port `3000` to host port `3001`, so any local reverse proxy should target `127.0.0.1:3001`.
 
 ### Supabase notes
 

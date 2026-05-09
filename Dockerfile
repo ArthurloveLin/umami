@@ -28,12 +28,14 @@ RUN npm run build-docker
 FROM node:${NODE_IMAGE_VERSION} AS runner
 WORKDIR /app
 
-ARG PRISMA_VERSION="7.6.0"
 ARG NODE_OPTIONS
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=$NODE_OPTIONS
+ENV SCRIPT_DEPS_DIR=/app/script-deps
+ENV PATH=${SCRIPT_DEPS_DIR}/node_modules/.bin:${PATH}
+ENV NODE_PATH=${SCRIPT_DEPS_DIR}/node_modules:/app/node_modules
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -52,11 +54,11 @@ COPY --from=builder /app/generated ./generated
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Install script dependencies AFTER standalone copy; standalone's node_modules would otherwise overwrite these
-RUN pnpm --allow-build=@prisma/engines --allow-build=prisma add npm-run-all dotenv chalk semver \
-    prisma@${PRISMA_VERSION} \
-    @prisma/client@${PRISMA_VERSION} \
-    @prisma/adapter-pg@${PRISMA_VERSION}
+# Keep script-only dependencies out of /app/node_modules so standalone traced packages stay intact.
+RUN set -x \
+    && mkdir -p "$SCRIPT_DEPS_DIR" \
+    && printf '{"name":"script-deps","private":true}\n' > "$SCRIPT_DEPS_DIR/package.json" \
+    && npm install --prefix "$SCRIPT_DEPS_DIR" --omit=dev $(node -e 'const pkg = require("/app/package.json"); const deps = [["npm-run-all", pkg.dependencies["npm-run-all"]], ["dotenv", pkg.dependencies["dotenv"]], ["chalk", pkg.dependencies["chalk"]], ["semver", pkg.dependencies["semver"]], ["prisma", pkg.dependencies["prisma"]], ["@prisma/client", pkg.dependencies["@prisma/client"]], ["@prisma/adapter-pg", pkg.dependencies["@prisma/adapter-pg"]]]; process.stdout.write(deps.map(([name, version]) => `${name}@${version.replace(/^[^0-9]*/, "")}`).join(" "))')
 
 USER nextjs
 
