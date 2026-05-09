@@ -1,0 +1,15 @@
+services:
+  umami:
+    image: ${UMAMI_IMAGE:-ghcr.io/arthurlovelin/umami:latest}
+    container_name: umami
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - ${UMAMI_ENV_FILE:-./.env}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/heartbeat || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

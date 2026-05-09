@@ -86,6 +86,46 @@ Docker compose (Runs Umami with a PostgreSQL database):
 docker compose up -d
 ```
 
+## Fork deployment with GHCR and external PostgreSQL
+
+This fork is prepared for a GitHub Actions to GHCR workflow, so the VPS only needs to pull and run a prebuilt image.
+
+### What is included
+
+- `.github/workflows/cd.yml` publishes GHCR images for this fork on every push to `master`, and publishes semver tags when you push a `v*.*.*` tag.
+- `.github/workflows/ci.yml` runs on this fork for push, pull request, and manual dispatch.
+- `docker-compose.ghcr.yml` runs only the Umami application image, which is the right fit when PostgreSQL stays in Supabase.
+- `.env.ghcr.example` includes the runtime variables needed for Supabase-backed deployments, including `DIRECT_URL` for Prisma migrations.
+
+### Published image tags
+
+- Push to `master`: `ghcr.io/<owner>/umami:master`, `ghcr.io/<owner>/umami:sha-<commit>`, `ghcr.io/<owner>/umami:latest`
+- Push tag `v3.1.0`: `ghcr.io/<owner>/umami:3.1.0`, `:3.1`, `:3`, `:latest`, `:postgresql-latest`
+
+### VPS deployment flow
+
+1. If you already copied the old working Umami env into this repo as `.env`, you can use it directly for local validation. For the VPS, copy `.env.ghcr.example` to a runtime env file and fill in your current Supabase-backed Umami connection values.
+2. Copy `docker-compose.ghcr.yml` to the VPS.
+3. Pull and start the image:
+
+```bash
+docker compose -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+4. Verify health:
+
+```bash
+curl http://127.0.0.1:3000/api/heartbeat
+```
+
+### Supabase notes
+
+- `DATABASE_URL` should point to the Supabase pooler endpoint when you want the app runtime to use pooled connections.
+- `DIRECT_URL` should point to the direct database endpoint because Prisma migration commands use it.
+- `docker-compose.ghcr.yml` defaults to `./.env`; override `UMAMI_ENV_FILE` only when the runtime env lives outside the project directory.
+- If you want a no-risk smoke boot before letting Umami run migrations, you can temporarily set `SKIP_DB_MIGRATION=1`, verify the container starts, then remove it and redeploy.
+
 ---
 
 ## 🔄 Getting Updates
