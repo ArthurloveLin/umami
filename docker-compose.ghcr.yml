@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     init: true
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
     env_file:
       - ${UMAMI_ENV_FILE:-./.env}
     healthcheck:
